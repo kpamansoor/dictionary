@@ -2,6 +2,7 @@ package com.mansoor.manglima;
 
 import android.content.ActivityNotFoundException;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -10,6 +11,8 @@ import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -37,7 +40,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -50,9 +52,9 @@ import com.google.common.collect.Multimaps;
 
 public class MainActivity extends AppCompatActivity {
 
-    private DataBaseHelper mydb;
+    private DBHelper mydb;
     private EditText word;
-    private TextView tvResult,app_link_text;
+    private TextView tvResult,app_link_text,textHistorySummary;
     private Set<String> keys;
     private List<String> autoCompleteList = null, resultList = null, resultList2 = null;
     private long delay = 500; // milliseconds after user stops typing
@@ -60,13 +62,13 @@ public class MainActivity extends AppCompatActivity {
     private Handler handler = new Handler();
     private CharSequence searchText;
     private final int REQ_CODE_SPEECH_INPUT = 100;
-    private ListView autocompleteList, searchResultList;
-    private ArrayAdapter<String> listAdapter, listAdapter2;
+    private ListView autocompleteListView, searchResultListView, historyListView;
+    private ArrayAdapter<String> englishAutoCompleteAdapter, englishResultAdapter, historyAdapter;
     private String str, str2 = "";
     private int n = 0;
     private Collection<String> values;
     private TextToSpeech tts;
-    private LinearLayout linearResult, layout_em;
+    private LinearLayout linearResult, layout_em,layout_history;
     private RelativeLayout info;
     private BottomNavigationView bottom_navigation_view;
     private HashMap<String, String> wordTypes = new HashMap<String, String>();
@@ -88,20 +90,13 @@ public class MainActivity extends AppCompatActivity {
         public boolean onNavigationItemSelected(@NonNull MenuItem item) {
             switch (item.getItemId()) {
                 case R.id.navigation_home:
-                    setTitle(R.string.title_em);
-                    englishPage = true;
-                    word.setHint(R.string.et_word);
-                    clearSearch(item.getActionView());
+                    loadEnglishToMalayalam(item);
                     return true;
                 case R.id.navigation_dashboard:
-                    setTitle(R.string.title_me);
-                    englishPage = false;
-                    word.setHint(R.string.et_ml_word);
-                    clearSearch(item.getActionView());
-                    info.setVisibility(View.VISIBLE);
+                    loadMalayalamToEnshish(item);
                     return true;
                 case R.id.navigation_notifications:
-                    setTitle(R.string.title_library);
+                    loadHistory();
                     return true;
             }
             return false;
@@ -109,52 +104,45 @@ public class MainActivity extends AppCompatActivity {
 
     };
 
+
+    private void loadEnglishToMalayalam(MenuItem item) {
+
+        setTitle(R.string.title_em);
+        englishPage = true;
+        layout_em.setVisibility(View.VISIBLE);
+        layout_history.setVisibility(View.GONE);
+        info.setVisibility(View.GONE);
+        word.setHint(R.string.et_word);
+        clearSearch(item.getActionView());
+    }
+
+    private void loadMalayalamToEnshish(MenuItem item) {
+        setTitle(R.string.title_me);
+        englishPage = false;
+        layout_em.setVisibility(View.VISIBLE);
+        layout_history.setVisibility(View.GONE);
+        word.setHint(R.string.et_ml_word);
+        clearSearch(item.getActionView());
+        info.setVisibility(View.VISIBLE);
+    }
+
+
+    private void loadHistory() {
+        setTitle(R.string.title_library);
+        layout_em.setVisibility(View.GONE);
+        info.setVisibility(View.GONE);
+        new ShowHistory().execute();
+
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-//        try {
-//            mydb = new DataBaseHelper(MainActivity.this);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-        setTitle("English to malayalam");
-        word = (EditText) findViewById(R.id.word);
-        autocompleteList = (ListView) findViewById(R.id.autocompleteList);
-        searchResultList = (ListView) findViewById(R.id.searchResultteList);
-        linearResult = (LinearLayout) findViewById(R.id.linearResult);
-        layout_em = (LinearLayout) findViewById(R.id.layout_em);
-        info = (RelativeLayout) findViewById(R.id.info);
-        bottom_navigation_view = (BottomNavigationView) findViewById(R.id.navigation);
-        loader = (RelativeLayout) findViewById(R.id.loader);
-        dotLoader = (DotLoader) findViewById(R.id.dot_loader);
-        tvResult = (TextView) findViewById(R.id.tvResult);
-        app_link_text = (TextView) findViewById(R.id.app_link_text);
-        app_link_text.setMovementMethod(LinkMovementMethod.getInstance());
-        autoCompleteList = new ArrayList<String>();
-        resultList = new ArrayList<String>();
-        resultList2 = new ArrayList<String>();
-        listAdapter = new ArrayAdapter<String>(this, R.layout.simplerow, autoCompleteList);
-        listAdapter2 = new ArrayAdapter<String>(this, R.layout.simplerow_result, resultList);
-        autocompleteList.setAdapter(listAdapter);
-        searchResultList.setAdapter(listAdapter2);
-        BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
-        navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
-
         new GenerateDictionary().execute();
 
-        wordTypes.put("n", "Noun");
-        wordTypes.put("propn", "Noun");
-        wordTypes.put("pron", "Pronoun");
-        wordTypes.put("v", "Verb");
-        wordTypes.put("phr", "Phrase");
-        wordTypes.put("prep", "Preposition");
-        wordTypes.put("conj", "Conjunction");
-        wordTypes.put("idm", "Idiom");
-        wordTypes.put("a", "Adjective");
-        wordTypes.put("adv", "Adverb");
-        wordTypes.put("-", "Other");
+        inializeVariables();
 
         tts = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
             @Override
@@ -173,20 +161,18 @@ public class MainActivity extends AppCompatActivity {
                         searchText = s;
                         last_text_edit = System.currentTimeMillis();
                         handler.postDelayed(input_finish_checker, delay);
-                        //new AutocompleteWord().execute(s.toString());
-                        searchResultList.setVisibility(View.GONE);
+                        searchResultListView.setVisibility(View.GONE);
                         linearResult.setVisibility(View.GONE);
-                        autocompleteList.setVisibility(View.VISIBLE);
+                        autocompleteListView.setVisibility(View.VISIBLE);
                     }
                 } else {
                     if (s.length() > 2) {
                         searchText = s;
                         last_text_edit = System.currentTimeMillis();
                         handler.postDelayed(input_finish_checker2, delay);
-//                    new MalayalamAutocompleteWord().execute(s.toString());
-                        searchResultList.setVisibility(View.GONE);
+                        searchResultListView.setVisibility(View.GONE);
                         linearResult.setVisibility(View.GONE);
-                        autocompleteList.setVisibility(View.VISIBLE);
+                        autocompleteListView.setVisibility(View.VISIBLE);
                     }
                 }
             }
@@ -241,46 +227,99 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        autocompleteList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        autocompleteListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                str = autoCompleteList.get(position);
-                word.setText(str);
-                if(englishPage) {
-                    resultList = multi_map.get(str);
-                    resultList2.clear();
-                    Collections.sort(resultList, Collections.reverseOrder());
-                    for (int i = 0; i < resultList.size(); i++) {
 
-                        str = resultList.get(i).split(" - ")[0];
-                        if (!str2.equals(str))
-                            resultList2.add(wordTypes.get(str));
-                        str2 = str;
-                        resultList2.add(" •  " + resultList.get(i).split(" - ")[1]);
-                    }
-                    listAdapter2.clear();
-                    listAdapter2.addAll(resultList2);
-                    listAdapter2.notifyDataSetChanged();
-                    autocompleteList.setVisibility(View.GONE);
-                    searchResultList.setVisibility(View.VISIBLE);
-                    linearResult.setVisibility(View.VISIBLE);
-                    tvResult.setText(resultList.size() + " Results");
-
-
-                }else{
-                    new ShowMalayalamResult().execute();
-                }
+                findOutMeaning(autoCompleteList.get(position));
                 ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(view.getWindowToken(), 0);
             }
         });
-        searchResultList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        searchResultListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 if(!englishPage){
-                    tts.speak(resultList2.get(position).split(" - ")[0]+", is a "+resultList2.get(position).split(" - ")[1], TextToSpeech.QUEUE_FLUSH, null);
+                    tts.speak(resultList2.get(position).split(" - ")[0], TextToSpeech.QUEUE_FLUSH, null);
                 }
             }
         });
+    }
+
+    private void findOutMeaning(String s) {
+        str = s;
+        word.setText(str);
+        if(englishPage) {
+            resultList = multi_map.get(str);
+            resultList2.clear();
+            Collections.sort(resultList, Collections.reverseOrder());
+            for (int i = 0; i < resultList.size(); i++) {
+
+                str = resultList.get(i).split(" - ")[0];
+                if (!str2.equals(str))
+                    resultList2.add(wordTypes.get(str));
+                str2 = str;
+                resultList2.add(" •  " + resultList.get(i).split(" - ")[1]);
+            }
+            englishResultAdapter.clear();
+            englishResultAdapter.addAll(resultList2);
+            englishResultAdapter.notifyDataSetChanged();
+            autocompleteListView.setVisibility(View.GONE);
+            searchResultListView.setVisibility(View.VISIBLE);
+            linearResult.setVisibility(View.VISIBLE);
+            tvResult.setText(resultList.size() + " result(s)");
+            mydb.insertHistory(word.getText().toString());
+
+        }else{
+            new ShowMalayalamResult().execute();
+        }
+    }
+
+    private void inializeVariables() {
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.setLogo(R.drawable.ic_search_white_24dp);
+        actionBar.setDisplayUseLogoEnabled(true);
+        actionBar.setHomeButtonEnabled(true);
+        actionBar.setDisplayShowHomeEnabled(true);
+
+        setTitle(R.string.app_name);
+        word = (EditText) findViewById(R.id.word);
+        autocompleteListView = (ListView) findViewById(R.id.autocompleteList);
+        searchResultListView = (ListView) findViewById(R.id.searchResultteList);
+        historyListView = (ListView) findViewById(R.id.historyList);
+        linearResult = (LinearLayout) findViewById(R.id.linearResult);
+        layout_em = (LinearLayout) findViewById(R.id.layout_em);
+        layout_history = (LinearLayout) findViewById(R.id.layout_history);
+        info = (RelativeLayout) findViewById(R.id.info);
+        bottom_navigation_view = (BottomNavigationView) findViewById(R.id.navigation);
+        loader = (RelativeLayout) findViewById(R.id.loader);
+        dotLoader = (DotLoader) findViewById(R.id.dot_loader);
+        tvResult = (TextView) findViewById(R.id.tvResult);
+        app_link_text = (TextView) findViewById(R.id.app_link_text);
+        textHistorySummary = (TextView) findViewById(R.id.textHistorySummary);
+        app_link_text.setMovementMethod(LinkMovementMethod.getInstance());
+        autoCompleteList = new ArrayList<String>();
+        resultList = new ArrayList<String>();
+        resultList2 = new ArrayList<String>();
+        englishAutoCompleteAdapter = new ArrayAdapter<String>(this, R.layout.simplerow, autoCompleteList);
+        englishResultAdapter = new ArrayAdapter<String>(this, R.layout.simplerow_result, resultList);
+        historyAdapter = new ArrayAdapter<String>(this, R.layout.simplerow, resultList2);
+        autocompleteListView.setAdapter(englishAutoCompleteAdapter);
+        searchResultListView.setAdapter(englishResultAdapter);
+        historyListView.setAdapter(historyAdapter);
+        BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
+        navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+        mydb = new DBHelper(MainActivity.this);
+        wordTypes.put("n", "Noun");
+        wordTypes.put("propn", "Noun");
+        wordTypes.put("pron", "Pronoun");
+        wordTypes.put("v", "Verb");
+        wordTypes.put("phr", "Phrase");
+        wordTypes.put("prep", "Preposition");
+        wordTypes.put("conj", "Conjunction");
+        wordTypes.put("idm", "Idiom");
+        wordTypes.put("a", "Adjective");
+        wordTypes.put("adv", "Adverb");
+        wordTypes.put("-", "Other");
     }
 
     public void speakTheWord(View v) {
@@ -299,11 +338,25 @@ public class MainActivity extends AppCompatActivity {
 
     public void clearSearch(View v) {
         word.setText("");
-        listAdapter2.clear();
-        listAdapter2.notifyDataSetChanged();
-        searchResultList.setVisibility(View.GONE);
+        englishResultAdapter.clear();
+        englishResultAdapter.notifyDataSetChanged();
+        searchResultListView.setVisibility(View.GONE);
         linearResult.setVisibility(View.GONE);
         ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE)).toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
+    }
+    public void clearHistory(View v) {
+        if(resultList2.size() == 0)
+            Toast.makeText(this, "Empty history", Toast.LENGTH_SHORT).show();
+        else
+            new AlertDialog.Builder(this)
+                .setMessage("Confirm delete?")
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        mydb.deleteHistory();
+                        new ShowHistory().execute();
+                    }
+                }).setNegativeButton("No", null).show();
     }
 
 
@@ -403,6 +456,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(String s) {
             loader.setVisibility(View.GONE);
+            setTitle("English to malayalam");
             bottom_navigation_view.setVisibility(View.VISIBLE);
             layout_em.setVisibility(View.VISIBLE);
             word.requestFocus();
@@ -433,9 +487,9 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(String s) {
-            listAdapter.clear();
-            listAdapter.addAll(autoCompleteList);
-            listAdapter.notifyDataSetChanged();
+            englishAutoCompleteAdapter.clear();
+            englishAutoCompleteAdapter.addAll(autoCompleteList);
+            englishAutoCompleteAdapter.notifyDataSetChanged();
         }
     }
 
@@ -468,9 +522,9 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(String s) {
-            listAdapter.clear();
-            listAdapter.addAll(autoCompleteList);
-            listAdapter.notifyDataSetChanged();
+            englishAutoCompleteAdapter.clear();
+            englishAutoCompleteAdapter.addAll(autoCompleteList);
+            englishAutoCompleteAdapter.notifyDataSetChanged();
         }
     }
 
@@ -479,7 +533,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPreExecute() {
             loader.setVisibility(View.VISIBLE);
-            autocompleteList.setVisibility(View.GONE);
+            autocompleteListView.setVisibility(View.GONE);
             resultList2.clear();
         }
 
@@ -497,17 +551,47 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             }
+            mydb.insertHistory(str);
             return "";
         }
 
         @Override
         protected void onPostExecute(String s) {
-            listAdapter2.clear();
-            listAdapter2.addAll(resultList2);
-            listAdapter2.notifyDataSetChanged();
-            searchResultList.setVisibility(View.VISIBLE);
+            englishResultAdapter.clear();
+            englishResultAdapter.addAll(resultList2);
+            englishResultAdapter.notifyDataSetChanged();
+            searchResultListView.setVisibility(View.VISIBLE);
             linearResult.setVisibility(View.VISIBLE);
             tvResult.setText(resultList.size() + " Results");
+            loader.setVisibility(View.GONE);
+        }
+    }
+
+    public class ShowHistory extends AsyncTask<String, String, String> {
+
+        @Override
+        protected void onPreExecute() {
+            loader.setVisibility(View.VISIBLE);
+            resultList2.clear();
+        }
+
+        protected String doInBackground(String... params) {
+            resultList2 = mydb.getData();
+            return "";
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            historyAdapter.clear();
+            historyAdapter.addAll(resultList2);
+            historyAdapter.notifyDataSetChanged();
+            loader.setVisibility(View.GONE);
+            layout_history.setVisibility(View.VISIBLE);
+            historyListView.setVisibility(View.VISIBLE);
+            if(resultList2.size() == 0)
+                textHistorySummary.setText("No history found.");
+            else
+                textHistorySummary.setText(resultList2.size() + " Words");
             loader.setVisibility(View.GONE);
         }
     }

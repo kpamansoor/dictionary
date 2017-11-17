@@ -3,21 +3,22 @@ package com.mansoor.manglima;
 /**
  * Created by L4208412 on 13/11/2017.
  */
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Hashtable;
+import java.util.List;
+
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
-import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteDatabase;
 
 public class DBHelper extends SQLiteOpenHelper {
 
     public static final String DATABASE_NAME = "manglima.db";
-    public static final String WORDS_TABLE_NAME = "words";
-    private HashMap hp;
+    public static final String HISTORY_TABLE_NAME = "history";
+    SQLiteDatabase db;
 
     public DBHelper(Context context) {
         super(context, DATABASE_NAME , null, 1);
@@ -27,51 +28,38 @@ public class DBHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         // TODO Auto-generated method stub
         db.execSQL(
-                "create table " +WORDS_TABLE_NAME+"(id integer primary key, word text,meaning text,type text)"
+                "create table " + HISTORY_TABLE_NAME +"(id integer primary key, word text)"
         );
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         // TODO Auto-generated method stub
-        db.execSQL("DROP TABLE IF EXISTS "+WORDS_TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS "+ HISTORY_TABLE_NAME);
         onCreate(db);
     }
 
-    public boolean insertWord (String word, String meaning, String type) {
-        SQLiteDatabase db = this.getWritableDatabase();
+    public boolean insertHistory (String word) {
+        db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put("word", word);
-        contentValues.put("meaning", meaning);
-        contentValues.put("type", type);
-        db.insert(WORDS_TABLE_NAME, null, contentValues);
+        db.insert(HISTORY_TABLE_NAME, null, contentValues);
         return true;
     }
 
-    public Cursor getData(int id) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor res =  db.rawQuery( "select * from "+WORDS_TABLE_NAME+" where id="+id+"", null );
-        return res;
-    }
-
-    public int numberOfRows(){
-        SQLiteDatabase db = this.getReadableDatabase();
-        int numRows = (int) DatabaseUtils.queryNumEntries(db, WORDS_TABLE_NAME);
-        return numRows;
-    }
-
-    public ArrayList<String> getMatchingWord() {
-        ArrayList<String> array_list = new ArrayList<String>();
-
-        //hp = new HashMap();
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor res =  db.rawQuery( "select * from "+WORDS_TABLE_NAME, null );
-        res.moveToFirst();
-
-        while(res.isAfterLast() == false){
-            array_list.add(res.getString(res.getColumnIndex(WORDS_TABLE_NAME)));
-            res.moveToNext();
+    public List<String> getData() {
+        db = this.getReadableDatabase();
+        List<String> resultList = new ArrayList<>();
+        Cursor res =  db.rawQuery( "select * from "+ HISTORY_TABLE_NAME+" ORDER BY id DESC", null );
+        while(res.moveToNext()) {
+            resultList.add(res.getString(1));
         }
-        return array_list;
+        return resultList;
+    }
+
+    public boolean deleteHistory () {
+        db = this.getWritableDatabase();
+        db.delete(HISTORY_TABLE_NAME, null,null);
+        return true;
     }
 }
