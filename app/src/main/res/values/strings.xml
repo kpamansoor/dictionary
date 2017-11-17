@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Manglima</string>
+    <string name="et_word">Type a word</string>
+    <string name="et_ml_word">മലയാളം ടൈപ്പ് ചെയ്യുക </string>
+    <string name="title_em">English to Malayalam</string>
+    <string name="title_me">Malayalam to English</string>
+    <string name="title_library">My Library</string>
+    <string name="speech_prompt">Speak the wod to search</string>
+    <string name="speech_not_supported">Sorry! Your device doesn\'t support speech input</string>
+    <string name="info">മലയാളം ടൈപ്പ് ചെയ്യുകയോ പേസ്റ്റ്  ചെയ്യുകയോ ചെയ്യാം .\nടൈപ്പ് ചെയ്യാൻ GBoard അല്ലെങ്കിൽ Indic Keybord  ഉപയോഗിക്കാം.\n ഇൻസ്റ്റാൾ  ചെയ്യാൻ ലിങ്ക്  ക്ലിക്ക് ചെയ്യുക</string>
+    <string name="app_link_text"><a href="https://play.google.com/store/apps/details?id=com.google.android.inputmethod.latin">GBoard</a> \t\t <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.inputmethod.hindi">Indic Keyboard</a></string>
+
+</resources>
