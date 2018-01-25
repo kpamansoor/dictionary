@@ -4,12 +4,12 @@
     <item
         android:id="@+id/navigation_home"
         android:icon="@drawable/ic_explicit_black_24dp"
-        android:title="E -> M" />
+        android:title="E > M" />
 
     <item
         android:id="@+id/navigation_dashboard"
         android:icon="@drawable/ic_explicit_black_24dp_2"
-        android:title="M -> E" />
+        android:title="M > E" />
 
     <item
         android:id="@+id/navigation_notifications"

@@ -44,10 +44,18 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import com.bhargavms.dotloader.DotLoader;
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.InterstitialAd;
+import com.google.android.gms.ads.MobileAds;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
+
+import cn.pedant.SweetAlert.SweetAlertDialog;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -56,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
     private EditText word;
     private TextView tvResult,app_link_text,textHistorySummary;
     private Set<String> keys;
-    private List<String> autoCompleteList = null, resultList = null, resultList2 = null;
+    private List<String> autoCompleteList = null, resultList = null, resultList2 = null,resultList3=null;
     private long delay = 500; // milliseconds after user stops typing
     private long last_text_edit = 0;
     private Handler handler = new Handler();
@@ -81,7 +89,8 @@ public class MainActivity extends AppCompatActivity {
             });
     private DotLoader dotLoader;
     private RelativeLayout loader;
-    private boolean englishPage = true;
+    private boolean englishPage = true,showAds=true;
+    private InterstitialAd mInterstitialAd;
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -106,7 +115,9 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void loadEnglishToMalayalam(MenuItem item) {
-
+        if (mInterstitialAd.isLoaded()&& showAds) {
+            showInterAds();
+        }
         setTitle(R.string.title_em);
         englishPage = true;
         layout_em.setVisibility(View.VISIBLE);
@@ -117,6 +128,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadMalayalamToEnshish(MenuItem item) {
+        if (mInterstitialAd.isLoaded()&& showAds) {
+            showInterAds();
+        }
         setTitle(R.string.title_me);
         englishPage = false;
         layout_em.setVisibility(View.VISIBLE);
@@ -128,6 +142,9 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void loadHistory() {
+        if (mInterstitialAd.isLoaded()&& showAds) {
+            showInterAds();
+        }
         setTitle(R.string.title_library);
         layout_em.setVisibility(View.GONE);
         info.setVisibility(View.GONE);
@@ -135,12 +152,31 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private void showInterAds() {
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mInterstitialAd.show();
+                showAds = false;
+            }
+        }, 10000);
+    }
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        getSupportActionBar().hide();
         new GenerateDictionary().execute();
+
+        // Interstitial ads
+        MobileAds.initialize(this, "ca-app-pub-1243068719441957~6247454596");// Production
+        mInterstitialAd = new InterstitialAd(this);
+        mInterstitialAd.setAdUnitId("ca-app-pub-3940256099942544/1033173712"); // Testing
+//        mInterstitialAd.setAdUnitId("ca-app-pub-1243068719441957/7471415668"); // Production
+        mInterstitialAd.loadAd(new AdRequest.Builder().build());
 
         inializeVariables();
 
@@ -151,6 +187,15 @@ public class MainActivity extends AppCompatActivity {
                     tts.setLanguage(Locale.ENGLISH);
                 }
             }
+        });
+
+        mInterstitialAd.setAdListener(new AdListener() {
+            @Override
+            public void onAdClosed() {
+                // Load the next interstitial.
+                mInterstitialAd.loadAd(new AdRequest.Builder().build());
+            }
+
         });
 
         word.addTextChangedListener(new TextWatcher() {
@@ -243,6 +288,26 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+        historyListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
+                new SweetAlertDialog(MainActivity.this)
+                        .setTitleText(resultList2.get(position))
+                        .setContentText(resultList3.get(position))
+                        .setCancelText("Cancel")
+                        .setConfirmText("Remove word")
+                        .showCancelButton(true)
+                        .setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
+                            @Override
+                            public void onClick(SweetAlertDialog sDialog) {
+                                mydb.deleteWord(resultList2.get(position));
+                                new ShowHistory().execute();
+                                sDialog.dismissWithAnimation();
+                            }
+                        })
+                        .show();
+            }
+        });
     }
 
     private void findOutMeaning(String s) {
@@ -267,7 +332,7 @@ public class MainActivity extends AppCompatActivity {
             searchResultListView.setVisibility(View.VISIBLE);
             linearResult.setVisibility(View.VISIBLE);
             tvResult.setText(resultList.size() + " result(s)");
-            mydb.insertHistory(word.getText().toString());
+            mydb.insertHistory(word.getText().toString(),resultList.toString());
 
         }else{
             new ShowMalayalamResult().execute();
@@ -342,21 +407,27 @@ public class MainActivity extends AppCompatActivity {
         englishResultAdapter.notifyDataSetChanged();
         searchResultListView.setVisibility(View.GONE);
         linearResult.setVisibility(View.GONE);
-        ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE)).toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
+        //((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE)).toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
     }
     public void clearHistory(View v) {
         if(resultList2.size() == 0)
             Toast.makeText(this, "Empty history", Toast.LENGTH_SHORT).show();
         else
-            new AlertDialog.Builder(this)
-                .setMessage("Confirm delete?")
-                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            new SweetAlertDialog(MainActivity.this,SweetAlertDialog.WARNING_TYPE)
+                    .setContentText("Confirm to clear search history?")
+                    .setTitleText("Clear history")
+                .setCancelText("Cancel")
+                .setConfirmText("Confirm")
+                .showCancelButton(true)
+                .setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
                     @Override
-                    public void onClick(DialogInterface dialog, int which) {
+                    public void onClick(SweetAlertDialog sDialog) {
                         mydb.deleteHistory();
                         new ShowHistory().execute();
+                        sDialog.dismissWithAnimation();
                     }
-                }).setNegativeButton("No", null).show();
+                })
+                .show();
     }
 
 
@@ -456,11 +527,18 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(String s) {
             loader.setVisibility(View.GONE);
-            setTitle("English to malayalam");
+            getSupportActionBar().show();
+            setTitle(R.string.title_em);
             bottom_navigation_view.setVisibility(View.VISIBLE);
             layout_em.setVisibility(View.VISIBLE);
             word.requestFocus();
-            ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE)).toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
+            AdView  mAdView = (AdView) findViewById(R.id.adView);
+            AdRequest adRequest = new AdRequest.Builder().build();
+            mAdView.loadAd(adRequest);
+            showInterAds();
+//        ("ca-app-pub-3940256099942544/6300978111");// Testing
+//      ("ca-app-pub-1243068719441957/5094510241");// Production
+//            ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE)).toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
         }
     }
 
@@ -551,7 +629,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             }
-            mydb.insertHistory(str);
+            mydb.insertHistory(str,resultList2.toString());
             return "";
         }
 
@@ -577,6 +655,7 @@ public class MainActivity extends AppCompatActivity {
 
         protected String doInBackground(String... params) {
             resultList2 = mydb.getData();
+            resultList3 = mydb.getMeaning();
             return "";
         }
 

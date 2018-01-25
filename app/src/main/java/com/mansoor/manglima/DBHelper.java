@@ -28,7 +28,7 @@ public class DBHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         // TODO Auto-generated method stub
         db.execSQL(
-                "create table " + HISTORY_TABLE_NAME +"(id integer primary key, word text)"
+                "create table " + HISTORY_TABLE_NAME +"(id integer primary key, word text,meaning text)"
         );
     }
 
@@ -39,10 +39,11 @@ public class DBHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    public boolean insertHistory (String word) {
+    public boolean insertHistory (String word,String meaning) {
         db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put("word", word);
+        contentValues.put("meaning", meaning);
         db.insert(HISTORY_TABLE_NAME, null, contentValues);
         return true;
     }
@@ -55,6 +56,20 @@ public class DBHelper extends SQLiteOpenHelper {
             resultList.add(res.getString(1));
         }
         return resultList;
+    }
+    public List<String> getMeaning() {
+        db = this.getReadableDatabase();
+        List<String> resultList = new ArrayList<>();
+        Cursor res =  db.rawQuery( "select * from "+ HISTORY_TABLE_NAME+" ORDER BY id DESC", null );
+        while(res.moveToNext()) {
+            resultList.add(res.getString(2));
+        }
+        return resultList;
+    }
+
+    public void deleteWord(String word) {
+        db = this.getReadableDatabase();
+        db.execSQL( "delete from "+ HISTORY_TABLE_NAME+" WHERE word='"+word+"'");
     }
 
     public boolean deleteHistory () {

@@ -144,15 +144,16 @@
 
         <RelativeLayout
             android:id="@+id/loader"
+            android:layout_marginTop="-80dp"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent">
 
             <ImageView
                 android:id="@+id/ic_image"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
                 android:layout_centerInParent="true"
-                android:src="@mipmap/ic_launcher" />
+                android:src="@drawable/logo" />
 
             <com.bhargavms.dotloader.DotLoader
                 android:id="@+id/dot_loader"
@@ -163,6 +164,46 @@
                 app:color_array="@array/dot_colors"
                 app:dot_radius="4dp"
                 app:number_of_dots="5" />
+            <TextView
+                android:id="@+id/title"
+                android:layout_below="@+id/dot_loader"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:textSize="35dp"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="#1f8ad5"
+                android:text="Manglima"/>
+            <TextView
+                android:id="@+id/title1"
+                android:layout_below="@+id/title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:textSize="25dp"
+                android:fontFamily="sans-serif-thin"
+                android:textColor="#4786af"
+                android:text="English ⇌ Malayalam"/>
+            <TextView
+                android:id="@+id/title2"
+                android:layout_below="@+id/title1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:textSize="20dp"
+                android:fontFamily="sans-serif-thin"
+                android:textColor="#4786af"
+                android:text="Offline Dictionary"/>
+            <TextView
+                android:layout_marginTop="50dp"
+                android:layout_below="@+id/title2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:textSize="15dp"
+                android:fontFamily="sans-serif-thin"
+                android:textColor="#4786af"
+                android:text="Version 3.0"/>
         </RelativeLayout>
 
         <RelativeLayout
@@ -200,5 +241,16 @@
         android:background="?android:attr/windowBackground"
         android:visibility="gone"
         app:menu="@menu/navigation" />
+    <com.google.android.gms.ads.AdView
+        xmlns:ads="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/adView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        ads:adSize="SMART_BANNER"
+        ads:adUnitId="ca-app-pub-3940256099942544/6300978111"
+        >
+    </com.google.android.gms.ads.AdView>
 
 </LinearLayout>

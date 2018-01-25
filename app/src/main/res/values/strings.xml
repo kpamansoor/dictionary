@@ -2,8 +2,8 @@
     <string name="app_name">Manglima</string>
     <string name="et_word">Type a word</string>
     <string name="et_ml_word">മലയാളം ടൈപ്പ് ചെയ്യുക </string>
-    <string name="title_em">English to Malayalam</string>
-    <string name="title_me">Malayalam to English</string>
+    <string name="title_em">Manglima Eng > Mal</string>
+    <string name="title_me">Manglima Mal > Eng</string>
     <string name="title_library">My Seach History</string>
     <string name="speech_prompt">Speak the word to search</string>
     <string name="speech_not_supported">Sorry! Your device doesn\'t support speech input</string>

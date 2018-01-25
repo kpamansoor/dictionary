@@ -4,11 +4,11 @@ android {
     compileSdkVersion 25
     buildToolsVersion "25.0.1"
     defaultConfig {
-        applicationId "com.mansoor.manglima"
+        applicationId "com.personal.mansoor.httptest"
         minSdkVersion 15
         targetSdkVersion 25
-        versionCode 1
-        versionName "1.0"
+        versionCode 3
+        versionName "3.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -34,4 +34,6 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile 'com.google.guava:guava:23.4-android'
     compile 'com.github.bhargavms:DotLoader:1+'
+    compile 'cn.pedant.sweetalert:library:1.3'
+    compile 'com.google.android.gms:play-services-ads:10.2.4'
 }
