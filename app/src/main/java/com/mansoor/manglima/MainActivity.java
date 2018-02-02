@@ -2,8 +2,8 @@ package com.mansoor.manglima;
 
 import android.content.ActivityNotFoundException;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -12,7 +12,6 @@ import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v7.app.ActionBar;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -60,6 +59,7 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String MY_PREFS_NAME = "manglima";
     private DBHelper mydb;
     private EditText word;
     private TextView tvResult,app_link_text,textHistorySummary;
@@ -91,6 +91,8 @@ public class MainActivity extends AppCompatActivity {
     private RelativeLayout loader;
     private boolean englishPage = true,showAds=true;
     private InterstitialAd mInterstitialAd;
+    private SharedPreferences prefs;
+    SharedPreferences.Editor editor;
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -153,14 +155,26 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showInterAds() {
-        final Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                mInterstitialAd.show();
-                showAds = false;
+        if(prefs.getInt("attempt", 0) == 0){
+            editor.putInt("attempt", 1);
+            editor.commit();
+        }else {
+            if(prefs.getInt("attempt", 0) == 10) {
+                editor.putInt("attempt", 1);
+                editor.commit();
+                final Handler handler = new Handler();
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        mInterstitialAd.show();
+                        showAds = false;
+                    }
+                }, 10000);
+            }else{
+                editor.putInt("attempt", prefs.getInt("attempt", 0)+1);
+                editor.commit();
             }
-        }, 10000);
+        }
     }
 
 
@@ -170,12 +184,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         getSupportActionBar().hide();
         new GenerateDictionary().execute();
-
+        prefs = getSharedPreferences(MY_PREFS_NAME, MODE_PRIVATE);
+        editor = getSharedPreferences(MY_PREFS_NAME, MODE_PRIVATE).edit();
         // Interstitial ads
         MobileAds.initialize(this, "ca-app-pub-1243068719441957~6247454596");// Production
         mInterstitialAd = new InterstitialAd(this);
-        mInterstitialAd.setAdUnitId("ca-app-pub-3940256099942544/1033173712"); // Testing
-//        mInterstitialAd.setAdUnitId("ca-app-pub-1243068719441957/7471415668"); // Production
+//        mInterstitialAd.setAdUnitId("ca-app-pub-3940256099942544/1033173712"); // Testing
+        mInterstitialAd.setAdUnitId("ca-app-pub-1243068719441957/7471415668"); // Production
         mInterstitialAd.loadAd(new AdRequest.Builder().build());
 
         inializeVariables();
