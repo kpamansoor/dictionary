@@ -1,7 +1,9 @@
 package com.mansoor.manglima;
 
+import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
@@ -9,13 +11,11 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
-import android.support.annotation.NonNull;
-import android.support.design.widget.BottomNavigationView;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
+
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.text.method.LinkMovementMethod;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
@@ -28,6 +28,12 @@ import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -47,14 +53,21 @@ import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
-import com.google.android.gms.ads.InterstitialAd;
+import com.google.android.gms.ads.FullScreenContentCallback;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.OnPaidEventListener;
+import com.google.android.gms.ads.ResponseInfo;
+import com.google.android.gms.ads.initialization.InitializationStatus;
+import com.google.android.gms.ads.initialization.OnInitializationCompleteListener;
+import com.google.android.gms.ads.interstitial.InterstitialAd;
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
 import com.google.android.gms.ads.MobileAds;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
 
-import cn.pedant.SweetAlert.SweetAlertDialog;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -117,10 +130,15 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void loadEnglishToMalayalam(MenuItem item) {
-        if (mInterstitialAd.isLoaded()&& showAds) {
+
+        if (mInterstitialAd != null) {
+//            mInterstitialAd.show(MainActivity.this);
             showInterAds();
+        } else {
+            Log.d("TAG", "The interstitial ad wasn't ready yet.");
         }
         setTitle(R.string.title_em);
+        getSupportActionBar().setTitle(R.string.title_em);
         englishPage = true;
         layout_em.setVisibility(View.VISIBLE);
         layout_history.setVisibility(View.GONE);
@@ -130,10 +148,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadMalayalamToEnshish(MenuItem item) {
-        if (mInterstitialAd.isLoaded()&& showAds) {
+        if (mInterstitialAd != null) {
+//            mInterstitialAd.show(MainActivity.this);
             showInterAds();
+        } else {
+            Log.d("TAG", "The interstitial ad wasn't ready yet.");
         }
-        setTitle(R.string.title_me);
+        getSupportActionBar().setTitle(R.string.title_me);
         englishPage = false;
         layout_em.setVisibility(View.VISIBLE);
         layout_history.setVisibility(View.GONE);
@@ -144,10 +165,14 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void loadHistory() {
-        if (mInterstitialAd.isLoaded()&& showAds) {
+        if (mInterstitialAd != null) {
+//            mInterstitialAd.show(MainActivity.this);
             showInterAds();
+        } else {
+            Log.d("TAG", "The interstitial ad wasn't ready yet.");
         }
-        setTitle(R.string.title_library);
+        ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(word.getWindowToken(), 0);
+        getSupportActionBar().setTitle(R.string.title_library);
         layout_em.setVisibility(View.GONE);
         info.setVisibility(View.GONE);
         new ShowHistory().execute();
@@ -159,17 +184,17 @@ public class MainActivity extends AppCompatActivity {
             editor.putInt("attempt", 1);
             editor.commit();
         }else {
-            if(prefs.getInt("attempt", 0) == 10) {
+            if(prefs.getInt("attempt", 0) == 5) {
                 editor.putInt("attempt", 1);
                 editor.commit();
                 final Handler handler = new Handler();
                 handler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        mInterstitialAd.show();
+                        mInterstitialAd.show(MainActivity.this);
                         showAds = false;
                     }
-                }, 10000);
+                }, 5000);
             }else{
                 editor.putInt("attempt", prefs.getInt("attempt", 0)+1);
                 editor.commit();
@@ -187,11 +212,80 @@ public class MainActivity extends AppCompatActivity {
         prefs = getSharedPreferences(MY_PREFS_NAME, MODE_PRIVATE);
         editor = getSharedPreferences(MY_PREFS_NAME, MODE_PRIVATE).edit();
         // Interstitial ads
-        MobileAds.initialize(this, "ca-app-pub-1243068719441957~6247454596");// Production
-        mInterstitialAd = new InterstitialAd(this);
+//        MobileAds.initialize(this, "ca-app-pub-1243068719441957~6247454596");// Production
+        mInterstitialAd = new InterstitialAd() {
+            @Nullable
+            @Override
+            public FullScreenContentCallback getFullScreenContentCallback() {
+                return null;
+            }
+
+            @Nullable
+            @Override
+            public OnPaidEventListener getOnPaidEventListener() {
+                return null;
+            }
+
+            @NonNull
+            @Override
+            public ResponseInfo getResponseInfo() {
+                return null;
+            }
+
+            @NonNull
+            @Override
+            public String getAdUnitId() {
+                return null;
+            }
+
+            @Override
+            public void setFullScreenContentCallback(@Nullable FullScreenContentCallback fullScreenContentCallback) {
+
+            }
+
+            @Override
+            public void setImmersiveMode(boolean b) {
+
+            }
+
+            @Override
+            public void setOnPaidEventListener(@Nullable OnPaidEventListener onPaidEventListener) {
+
+            }
+
+            @Override
+            public void show(@NonNull Activity activity) {
+
+            }
+        };
 //        mInterstitialAd.setAdUnitId("ca-app-pub-3940256099942544/1033173712"); // Testing
-        mInterstitialAd.setAdUnitId("ca-app-pub-1243068719441957/7471415668"); // Production
-        mInterstitialAd.loadAd(new AdRequest.Builder().build());
+//        mInterstitialAd.setAdUnitId("ca-app-pub-1243068719441957/7471415668"); // Production
+//        mInterstitialAd.loadAd(new AdRequest.Builder().build());
+
+        MobileAds.initialize(this, new OnInitializationCompleteListener() {
+            @Override
+            public void onInitializationComplete(InitializationStatus initializationStatus) {}
+        });
+        AdRequest adRequest = new AdRequest.Builder().build();
+        InterstitialAd.load(this,"ca-app-pub-1243068719441957/7471415668", adRequest,
+                new InterstitialAdLoadCallback() {
+                    @Override
+                    public void onAdLoaded(@NonNull InterstitialAd interstitialAd) {
+                        // The mInterstitialAd reference will be null until
+                        // an ad is loaded.
+                        mInterstitialAd = interstitialAd;
+                        Log.i("Ads", "onAdLoaded");
+                    }
+
+                    @Override
+                    public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                        // Handle the error
+                        Log.d("Ads", loadAdError.toString());
+                        mInterstitialAd = null;
+                    }
+                });
+
+
 
         inializeVariables();
 
@@ -204,14 +298,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        mInterstitialAd.setAdListener(new AdListener() {
-            @Override
-            public void onAdClosed() {
-                // Load the next interstitial.
-                mInterstitialAd.loadAd(new AdRequest.Builder().build());
-            }
-
-        });
+//        mInterstitialAd.setAdListener(new AdListener() {
+//            @Override
+//            public void onAdClosed() {
+//                // Load the next interstitial.
+//                mInterstitialAd.loadAd(new AdRequest.Builder().build());
+//            }
+//
+//        });
 
         word.addTextChangedListener(new TextWatcher() {
 
@@ -261,6 +355,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
         word.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -306,27 +401,31 @@ public class MainActivity extends AppCompatActivity {
         historyListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
-                new SweetAlertDialog(MainActivity.this)
-                        .setTitleText(resultList2.get(position))
-                        .setContentText(resultList3.get(position))
-                        .setCancelText("Cancel")
-                        .setConfirmText("Remove word")
-                        .showCancelButton(true)
-                        .setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
-                            @Override
-                            public void onClick(SweetAlertDialog sDialog) {
-                                mydb.deleteWord(resultList2.get(position));
-                                new ShowHistory().execute();
-                                sDialog.dismissWithAnimation();
-                            }
-                        })
-                        .show();
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+// Add the buttons.
+                builder.setTitle(resultList2.get(position));
+                builder.setMessage(resultList3.get(position));
+                builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // User taps OK button.
+                    }
+                });
+                builder.setNegativeButton("Remove this", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        mydb.deleteWord(resultList2.get(position));
+                        new ShowHistory().execute();
+                        Toast.makeText(MainActivity.this, "Word removed from history", Toast.LENGTH_SHORT).show();
+                        dialog.dismiss();
+                    }
+                });
+                builder.show();
+
             }
         });
     }
 
     private void findOutMeaning(String s) {
-        str = s;
+        str = s.trim();
         word.setText(str);
         if(englishPage) {
             resultList = multi_map.get(str);
@@ -356,7 +455,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void inializeVariables() {
         ActionBar actionBar = getSupportActionBar();
-        actionBar.setLogo(R.drawable.ic_search_white_24dp);
+//        actionBar.setLogo(R.drawable.ic_search_white_24dp);
         actionBar.setDisplayUseLogoEnabled(true);
         actionBar.setHomeButtonEnabled(true);
         actionBar.setDisplayShowHomeEnabled(true);
@@ -422,27 +521,49 @@ public class MainActivity extends AppCompatActivity {
         englishResultAdapter.notifyDataSetChanged();
         searchResultListView.setVisibility(View.GONE);
         linearResult.setVisibility(View.GONE);
+        word.requestFocus();
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.showSoftInput(word, InputMethodManager.SHOW_IMPLICIT);
         //((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE)).toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
     }
     public void clearHistory(View v) {
         if(resultList2.size() == 0)
             Toast.makeText(this, "Empty history", Toast.LENGTH_SHORT).show();
         else
-            new SweetAlertDialog(MainActivity.this,SweetAlertDialog.WARNING_TYPE)
-                    .setContentText("Confirm to clear search history?")
-                    .setTitleText("Clear history")
-                .setCancelText("Cancel")
-                .setConfirmText("Confirm")
-                .showCancelButton(true)
-                .setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
-                    @Override
-                    public void onClick(SweetAlertDialog sDialog) {
-                        mydb.deleteHistory();
-                        new ShowHistory().execute();
-                        sDialog.dismissWithAnimation();
-                    }
-                })
-                .show();
+        {
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+// Add the buttons.
+            builder.setTitle("Clear history");
+            builder.setMessage("Confirm to clear search history?");
+            builder.setPositiveButton("Clear all", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    mydb.deleteHistory();
+                    new ShowHistory().execute();
+                    Toast.makeText(MainActivity.this, "History cleared", Toast.LENGTH_SHORT).show();
+                }
+            });
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    dialog.dismiss();
+                }
+            });
+            builder.show();
+        }
+//            new SweetAlertDialog(MainActivity.this,SweetAlertDialog.WARNING_TYPE)
+//                    .setContentText("Confirm to clear search history?")
+//                    .setTitleText("Clear history")
+//                .setCancelText("Cancel")
+//                .setConfirmText("Confirm")
+//                .showCancelButton(true)
+//                .setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
+//                    @Override
+//                    public void onClick(SweetAlertDialog sDialog) {
+//                        mydb.deleteHistory();
+//                        new ShowHistory().execute();
+//                        sDialog.dismissWithAnimation();
+//                    }
+//                })
+//                .show();
     }
 
 
@@ -544,12 +665,24 @@ public class MainActivity extends AppCompatActivity {
             loader.setVisibility(View.GONE);
             getSupportActionBar().show();
             setTitle(R.string.title_em);
+
             bottom_navigation_view.setVisibility(View.VISIBLE);
             layout_em.setVisibility(View.VISIBLE);
             word.requestFocus();
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.showSoftInput(word, InputMethodManager.SHOW_IMPLICIT);
+
+            MobileAds.initialize(MainActivity.this, new OnInitializationCompleteListener() {
+                @Override
+                public void onInitializationComplete(InitializationStatus initializationStatus) {
+                }
+            });
+
             AdView  mAdView = (AdView) findViewById(R.id.adView);
             AdRequest adRequest = new AdRequest.Builder().build();
             mAdView.loadAd(adRequest);
+
+
             showInterAds();
 //        ("ca-app-pub-3940256099942544/6300978111");// Testing
 //      ("ca-app-pub-1243068719441957/5094510241");// Production
@@ -567,7 +700,7 @@ public class MainActivity extends AppCompatActivity {
         protected String doInBackground(String... params) {
             int n = 0;
             for (String string : keys) {
-                if (string.toLowerCase().startsWith(params[0].toLowerCase())) {
+                if (string.toLowerCase().startsWith(params[0].toLowerCase().trim())) {
                     autoCompleteList.add(string);
                     n++;
                     if (n >= 5)
@@ -595,11 +728,12 @@ public class MainActivity extends AppCompatActivity {
 
         protected String doInBackground(String... params) {
             int n = 0;
+            String mal_param = params[0].toString().trim();
             values = multi_map.values();
             for (Object value : values) {
-                if (value.toString().contains(params[0])) {
+                if (value.toString().contains(mal_param)) {
                     str = value.toString().split(" - ")[1];
-                    if(str.startsWith(params[0])) {
+                    if(str.startsWith(mal_param)) {
                         autoCompleteList.add(str);
                         if(n ==0)
                             autoCompleteList = new ArrayList<String>();

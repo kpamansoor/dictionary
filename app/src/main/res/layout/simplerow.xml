@@ -2,8 +2,11 @@
     android:id="@+id/rowTextView"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
-    android:drawableLeft="@drawable/bullet"
+    android:drawableRight="@drawable/baseline_arrow_circle_right_24"
     android:drawablePadding="8dp"
     android:padding="10dp"
+    android:textColor="#FFF"
+    android:fontFamily="sans-serif-thin"
+    android:textStyle="bold"
     android:textSize="16sp" >
 </TextView>

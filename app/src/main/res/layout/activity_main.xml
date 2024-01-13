@@ -6,6 +6,7 @@
     android:layout_width="fill_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:background="#000"
     tools:context="com.mansoor.manglima.MainActivity">
 
     <FrameLayout
@@ -34,9 +35,11 @@
                 android:hint="@string/et_word"
                 android:padding="8dp"
                 android:paddingLeft="5dp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-thin"
                 android:textColor="#FFF"
                 android:textColorHint="#fff"
-                android:textStyle="bold" />
+                />
 
             <LinearLayout
                 android:id="@+id/linearResult"
@@ -55,8 +58,8 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="4"
                     android:text="Result"
-                    android:textColor="#fff"
-                    android:textStyle="bold" />
+                    android:fontFamily="sans-serif-thin"
+                    android:textColor="#fff"/>
 
                 <ImageView
                     android:layout_width="0dp"
@@ -64,7 +67,7 @@
                     android:layout_gravity="end"
                     android:layout_weight="2"
                     android:onClick="clearSearch"
-                    android:src="@drawable/ic_clear_white_24dp" />
+                    android:src="@drawable/ic_delete_forever_white_24dp" />
 
                 <ImageView
                     android:layout_width="0dp"
@@ -87,6 +90,7 @@
             <ListView
                 android:id="@+id/autocompleteList"
                 android:layout_width="fill_parent"
+                android:fontFamily="sans-serif-thin"
                 android:layout_height="wrap_content" />
 
             <ListView
@@ -170,10 +174,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
-                android:textSize="35dp"
+                android:textSize="40dp"
                 android:fontFamily="sans-serif-medium"
                 android:textColor="#1f8ad5"
-                android:text="Manglima"/>
+                android:text="വാക് "/>
             <TextView
                 android:id="@+id/title1"
                 android:layout_below="@+id/title"
@@ -203,7 +207,7 @@
                 android:textSize="15dp"
                 android:fontFamily="sans-serif-thin"
                 android:textColor="#4786af"
-                android:text="Version 3.0"/>
+                android:text="Version 4.1"/>
         </RelativeLayout>
 
         <RelativeLayout
@@ -218,6 +222,7 @@
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
                 android:gravity="center_horizontal"
+                android:textColor="@android:color/white"
                 android:text="@string/info" />
 
             <TextView
@@ -233,14 +238,19 @@
 
     </FrameLayout>
 
-    <android.support.design.widget.BottomNavigationView
+    <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/navigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
         android:layout_gravity="bottom"
-        android:background="?android:attr/windowBackground"
+
+
+        app:itemIconTint="@android:color/white"
+        app:itemTextColor="@android:color/white"
         android:visibility="gone"
         app:menu="@menu/navigation" />
+
     <com.google.android.gms.ads.AdView
         xmlns:ads="http://schemas.android.com/apk/res-auto"
         android:id="@+id/adView"
